@@ -93,7 +93,6 @@ def main():
     print(f'Directory {args.dir}.')
     print(f'Snapshot  {args.snapshot}.')
     print(f'Output    {args.output}.')
-    print(f'Nprocs    {args.nprocs}.')
 
 
   #file name
@@ -115,17 +114,16 @@ def main():
 
 
     f = h5py.File(fname,'r')
-    density = f['density']
+    temperature = f['temperature']
     if(i==0):
-    #if(True):
-      density_image = np.zeros((f.attrs['dims'][1],f.attrs['dims'][0]))
+      temperature_image = np.zeros((f.attrs['dims'][1],f.attrs['dims'][0]))
       print(f'Filename {fname}')
       print(list(f.attrs.keys()))
       print(f.attrs['dims'])
       print(f.attrs['dims_local'])
       print(f.attrs['offset'])
       print(list(f.keys()))
-      print(f'density.shape {density.shape}')
+      print(f'temperature.shape {temperature.shape}')
  
     ox = f.attrs['offset'][0]
     oy = f.attrs['offset'][1]
@@ -134,23 +132,18 @@ def main():
     nyl = f.attrs['dims_local'][1]
     nzl = f.attrs['dims_local'][2]
 
-    #print(f'offsets ',ox,oy,oz)
-    #print(f'limits ',nxl,nyl,nzl)
 
-
-    #project a subset of the box density
+    #project a subset of the box gas_energy
     if((oz>=args.izmin)&(oz+nzl<=args.izmax)):
       izmin = np.max( [oz-args.izmin, 0] )
       izmax = np.min( [(args.izmax - (oz+nzl)), nzl] )
-      density_image[ox:ox+nxl,oy:oy+nyl] += np.sum(density[:,:,izmin:izmax],axis=2)
-      #print(i,np.min(density_image),np.max(density_image))
-    #else:
-    #  print(f'Not contributing indices {args.izmin},{oz},{oz+nzl},{args.izmax}')
+      temperature_image[ox:ox+nxl,oy:oy+nyl] += np.sum(temperature[:,:,izmin:izmax],axis=2)
+    
 
-  print(f'Density extrema {np.min(density)}/{np.max(density)}')
-  print(np.min(density_image),np.max(density_image))
-  #save the density field
-  plt.imsave(args.output,np.log10(density_image),origin='lower',cmap=f'{args.cmap}')
+  temperature_image/=float(nzl)
+  #save the gas_energy field
+  print(f'Min/max temperature {np.log10(temperature_image).min()}/{np.log10(temperature_image).max()}')
+  plt.imsave(args.output,np.log10(temperature_image),origin='lower',cmap=f'{args.cmap}')
 
   #end timer
   time_global_end = time.time()
